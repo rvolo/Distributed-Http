@@ -1,0 +1,21 @@
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://127.0.0.1:8761/eureka/
+  instance:
+    preferIpAddress: true
+  healthcheck:
+    enabled: true
+
+server:
+  port: 0
+
+endpoints:
+  enabled: true
+  actuator:
+    enabled: true
+  shutdown:
+    enabled: false
+
+spring:
+  application.name: http_worker
