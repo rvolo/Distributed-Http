@@ -21,6 +21,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 
 /**
  * Microservice to execute a http request and return the received http source
@@ -41,35 +45,42 @@ public class HttpWorker {
 		type = (type == null) ? RequestType.GET : type;
 		logger.debug("Executing {} request:{}", type, url);
 
+		URI uri;
 		try {
-			return executeRequest(type, url);
+			uri = new URL(url).toURI();
+		} catch (MalformedURLException | URISyntaxException e) {
+			return RequestWrapper.createNew(type, url, e);
+		}
+
+		try {
+			return executeRequest(type, uri);
 		} catch (Exception e) {
 			return RequestWrapper.createNew(type, url, e);
 		}
 	}
 
-	private RequestWrapper executeRequest(RequestType type, String url) throws IOException {
+	private RequestWrapper executeRequest(RequestType type, URI uri) throws IOException {
 		HttpResponse response;
 		switch (type) {
 			default:
 			case GET:
-				response = client.execute(new HttpGet(url));
+				response = client.execute(new HttpGet(uri));
 				break;
 			case POST:
-				response = client.execute(new HttpPost(url));
+				response = client.execute(new HttpPost(uri));
 				break;
 			case PUT:
-				response = client.execute(new HttpPut(url));
+				response = client.execute(new HttpPut(uri));
 				break;
 			case DELETE:
-				response = client.execute(new HttpDelete(url));
+				response = client.execute(new HttpDelete(uri));
 				break;
 		}
-		return createWrapper(type, url, response);
+		return createWrapper(type, uri, response);
 	}
 
-	private RequestWrapper createWrapper(RequestType type, String url, HttpResponse response) throws IOException {
+	private RequestWrapper createWrapper(RequestType type, URI url, HttpResponse response) throws IOException {
 		String source = EntityUtils.toString(response.getEntity());
-		return RequestWrapper.createNew(type, url, response.getStatusLine().getStatusCode(), source);
+		return RequestWrapper.createNew(type, url.toString(), response.getStatusLine().getStatusCode(), source);
 	}
 }
