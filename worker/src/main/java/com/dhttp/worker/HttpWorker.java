@@ -1,5 +1,7 @@
 package com.dhttp.worker;
 
+import com.dhttp.data.RequestType;
+import com.dhttp.data.RequestWrapper;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
@@ -13,7 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -34,11 +36,19 @@ public class HttpWorker {
 		SpringApplication.run(HttpWorker.class, args);
 	}
 
-	@GetMapping("/")
-	public ResponseEntity<String> proxyRequest(@RequestParam String url, @RequestParam(required = false) RequestType type) throws IOException {
+	@GetMapping(path = "/", produces = {MediaType.APPLICATION_XML_VALUE})
+	public RequestWrapper proxyRequest(@RequestParam String url, @RequestParam(required = false) RequestType type) {
 		type = (type == null) ? RequestType.GET : type;
-
 		logger.debug("Executing {} request:{}", type, url);
+
+		try {
+			return executeRequest(type, url);
+		} catch (Exception e) {
+			return RequestWrapper.createNew(type, url, e);
+		}
+	}
+
+	private RequestWrapper executeRequest(RequestType type, String url) throws IOException {
 		HttpResponse response;
 		switch (type) {
 			default:
@@ -55,15 +65,11 @@ public class HttpWorker {
 				response = client.execute(new HttpDelete(url));
 				break;
 		}
-
-		ResponseEntity.BodyBuilder entity = ResponseEntity.ok().header("dhttp_response", "true");
-		return entity.body(EntityUtils.toString(response.getEntity()));
+		return createWrapper(type, url, response);
 	}
 
-	public enum RequestType {
-		GET,
-		POST,
-		PUT,
-		DELETE
+	private RequestWrapper createWrapper(RequestType type, String url, HttpResponse response) throws IOException {
+		String source = EntityUtils.toString(response.getEntity());
+		return RequestWrapper.createNew(type, url, response.getStatusLine().getStatusCode(), source);
 	}
 }

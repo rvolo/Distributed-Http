@@ -24,6 +24,15 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-xml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.dhttp</groupId>
+            <artifactId>data-models</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.cloud</groupId>
