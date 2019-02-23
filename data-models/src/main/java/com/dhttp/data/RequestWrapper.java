@@ -18,7 +18,7 @@ public class RequestWrapper {
 	private final String source;
 
 	public static RequestWrapper createNew(RequestType type, String url, Exception ex) {
-		return new RequestWrapper(false, url, type, ex.toString(), -1, null);
+		return new RequestWrapper(false, url, type, ex.getMessage(), -1, null);
 	}
 
 	public static RequestWrapper createNew(RequestType type, String url, int responseCode, String source) {
