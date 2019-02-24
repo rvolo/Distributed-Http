@@ -3,10 +3,13 @@ package com.dhttp.data;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlCData;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.Base64;
 
 /**
  * Response xml object to be returned by all requests
  * Generic object that can bve a error message or a successful response question
+ * <p>
+ * raw html is encoded to base64 to stop it from possibly breaking the xml object at the cost of readability and overhead
  */
 @XmlRootElement
 public class RequestWrapper {
@@ -15,17 +18,17 @@ public class RequestWrapper {
 	private final String url;
 	private final RequestType type;
 	private final int responseCode;
-	private final String source;
+	private final byte[] source;
 
 	public static RequestWrapper createNew(RequestType type, String url, Exception ex) {
 		return new RequestWrapper(false, url, type, ex.getMessage(), -1, null);
 	}
 
 	public static RequestWrapper createNew(RequestType type, String url, int responseCode, String source) {
-		return new RequestWrapper(true, url, type, null, responseCode, source);
+		return new RequestWrapper(true, url, type, null, responseCode,  Base64.getEncoder().encode(source.getBytes()));
 	}
 
-	private RequestWrapper(boolean success, String url, RequestType type, String error, int responseCode, String source) {
+	private RequestWrapper(boolean success, String url, RequestType type, String error, int responseCode, byte[] source) {
 		this.success = success;
 		this.error = error;
 		this.url = url;
@@ -42,10 +45,9 @@ public class RequestWrapper {
 	}
 
 	/**
-	 * @return raw html wrapped as a CDATA
+	 * @return raw html encoded to Base64
 	 */
-	@JacksonXmlCData
-	public String getSource() {
+	public byte[] getSource() {
 		return source;
 	}
 
