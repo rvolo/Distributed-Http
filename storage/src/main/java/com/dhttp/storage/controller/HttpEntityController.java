@@ -1,6 +1,6 @@
 package com.dhttp.storage.controller;
 
-import com.dhttp.data.RequestType;
+import com.dhttp.data.model.RequestType;
 import com.dhttp.storage.exception.IdNotFoundException;
 import com.dhttp.storage.model.HttpEntity;
 import com.dhttp.storage.repository.HttpEntityRepository;
@@ -35,6 +35,6 @@ public class HttpEntityController {
 
 	@PostMapping
 	public HttpEntity createNew(@RequestParam String url, @RequestParam RequestType type, @RequestBody String httpSource) {
-		return repository.save(new HttpEntity().setUrl(url).setType(type.toString()).setSource(httpSource));
+		return repository.save((HttpEntity) new HttpEntity().setSource(httpSource).setUrl(url).setType(type));
 	}
 }

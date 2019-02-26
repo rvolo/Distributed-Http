@@ -13,6 +13,7 @@
         <module>data-models</module>
         <module>discovery</module>
         <module>gateway</module>
+        <module>storage</module>
         <module>worker</module>
     </modules>
 </project>
