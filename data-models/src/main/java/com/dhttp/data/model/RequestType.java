@@ -1,4 +1,4 @@
-package com.dhttp.data;
+package com.dhttp.data.model;
 
 /**
  * Supported HTTP Request types
