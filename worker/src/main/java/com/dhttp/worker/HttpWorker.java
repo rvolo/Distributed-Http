@@ -1,7 +1,7 @@
 package com.dhttp.worker;
 
-import com.dhttp.data.RequestType;
-import com.dhttp.data.RequestWrapper;
+import com.dhttp.data.model.HttpRecord;
+import com.dhttp.data.model.RequestType;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
@@ -12,13 +12,15 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
-import org.springframework.http.MediaType;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -33,6 +35,7 @@ import java.net.URL;
 @EnableDiscoveryClient
 @RestController
 public class HttpWorker {
+	private static final RestTemplate template = new RestTemplate();
 	private static final Logger logger = LoggerFactory.getLogger(HttpWorker.class);
 	private static final HttpClient client = HttpClientBuilder.create().build();
 
@@ -40,26 +43,25 @@ public class HttpWorker {
 		SpringApplication.run(HttpWorker.class, args);
 	}
 
-	@GetMapping(path = "/", produces = {MediaType.APPLICATION_XML_VALUE})
-	public RequestWrapper proxyRequest(@RequestParam String url, @RequestParam(required = false) RequestType type) {
+	@Value("${gateway.url}")
+	private String gatewayUrl;
+
+	@GetMapping(path = "/")
+	public HttpRecord proxyRequest(@RequestParam String url, @RequestParam(required = false) RequestType type) throws Exception {
 		type = (type == null) ? RequestType.GET : type;
 		logger.debug("Executing {} request:{}", type, url);
 
-		URI uri;
-		try {
-			uri = new URL(url).toURI();
-		} catch (MalformedURLException | URISyntaxException e) {
-			return RequestWrapper.createNew(type, url, e);
-		}
-
-		try {
-			return executeRequest(type, uri);
-		} catch (Exception e) {
-			return RequestWrapper.createNew(type, url, e);
-		}
+		return executeRequest(type, new URL(url).toURI());
 	}
 
-	private RequestWrapper executeRequest(RequestType type, URI uri) throws IOException {
+	/**
+	 * Execute http request and save to storage microservice
+	 *
+	 * @param type http request type
+	 * @param uri  url to request
+	 * @return HttpRecord
+	 */
+	private HttpRecord executeRequest(RequestType type, URI uri) throws IOException {
 		HttpResponse response;
 		switch (type) {
 			default:
@@ -76,11 +78,27 @@ public class HttpWorker {
 				response = client.execute(new HttpDelete(uri));
 				break;
 		}
-		return createWrapper(type, uri, response);
+
+		String source = EntityUtils.toString(response.getEntity());
+		try {
+			return saveToStorage(type, uri.toString(), source);
+		} catch (Exception ex) {
+			throw new ErrorSavingToStorageException(ex);
+		}
 	}
 
-	private RequestWrapper createWrapper(RequestType type, URI url, HttpResponse response) throws IOException {
-		String source = EntityUtils.toString(response.getEntity());
-		return RequestWrapper.createNew(type, url.toString(), response.getStatusLine().getStatusCode(), source);
+	private HttpRecord saveToStorage(RequestType type, String url, String source) {
+		ResponseEntity<HttpRecord> exchange = template.exchange(
+				gatewayUrl + "?url={url}&type={type}",
+				HttpMethod.POST,
+				new HttpEntity<>(source, new HttpHeaders()),
+				HttpRecord.class,
+				url,
+				type
+		);
+		if (exchange.getStatusCode().is2xxSuccessful()) {
+			return exchange.getBody();
+		}
+		throw new ErrorSavingToStorageException(exchange.getStatusCodeValue());
 	}
 }

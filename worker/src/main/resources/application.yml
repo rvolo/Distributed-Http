@@ -8,7 +8,7 @@ eureka:
     enabled: true
 
 server:
-  port: 0
+  port: 10100
 
 endpoints:
   enabled: true
@@ -19,3 +19,5 @@ endpoints:
 
 spring:
   application.name: http_worker
+
+gateway.url: http://127.0.0.1:9000/storage

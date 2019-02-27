@@ -25,3 +25,6 @@ zuul.routes:
   http:
     path: /http/**
     serviceId: http_worker
+  storage:
+    paht: /storage/**
+    serviceId: storage
