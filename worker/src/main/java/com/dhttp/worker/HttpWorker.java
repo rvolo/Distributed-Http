@@ -20,6 +20,7 @@ import org.springframework.http.*;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
@@ -50,6 +51,7 @@ public class HttpWorker {
 	public HttpRecord proxyRequest(@RequestParam String url, @RequestParam(required = false) RequestType type) throws Exception {
 		type = (type == null) ? RequestType.GET : type;
 		logger.debug("Executing {} request:{}", type, url);
+
 
 		return executeRequest(type, new URL(url).toURI());
 	}
@@ -82,6 +84,8 @@ public class HttpWorker {
 		String source = EntityUtils.toString(response.getEntity());
 		try {
 			return saveToStorage(type, uri.toString(), source);
+		} catch (HttpServerErrorException ex) {
+			throw new ErrorSavingToStorageException(ex.getRawStatusCode());
 		} catch (Exception ex) {
 			throw new ErrorSavingToStorageException(ex);
 		}
