@@ -42,13 +42,13 @@ public class GatewayServer {
 					@Override
 					public HttpHeaders getHeaders() {
 						HttpHeaders headers = new HttpHeaders();
-						headers.setContentType(MediaType.APPLICATION_XML);
+						headers.setContentType(MediaType.APPLICATION_JSON);
 						return headers;
 					}
 
 					@Override
 					public InputStream getBody() throws IOException {
-						return new ByteArrayInputStream("<RequestWrapper><success>false</success><error>Service timed out</error><responseCode>-1</responseCode><url/><type/><source/></RequestWrapper>".getBytes());
+						return new ByteArrayInputStream("{\"success\": false, \"reason\": \"Service timed out\"}".getBytes());
 					}
 
 					@Override
