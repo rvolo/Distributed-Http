@@ -7,6 +7,7 @@ import java.util.Date;
 /**
  * Json object to be passed between microservices and used as public response
  */
+
 public class HttpRecord {
 	private String id;
 	private Date createdOn;
@@ -64,5 +65,18 @@ public class HttpRecord {
 				", url='" + url + '\'' +
 				", type=" + type +
 				'}';
+	}
+
+	/**
+	 * Check to see if the object has populated values
+	 *
+	 * @return if required values are not null
+	 */
+	public boolean isValid() {
+		if (id == null || id.isEmpty()) return false;
+		if (createdOn == null) return false;
+		if (url == null || url.isEmpty()) return false;
+		if (type == null) return false;
+		return true;
 	}
 }

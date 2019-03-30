@@ -16,7 +16,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,9 +27,7 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 
 /**
@@ -50,9 +51,8 @@ public class HttpWorker {
 	@GetMapping(path = "/")
 	public HttpRecord proxyRequest(@RequestParam String url, @RequestParam(required = false) RequestType type) throws Exception {
 		type = (type == null) ? RequestType.GET : type;
+
 		logger.debug("Executing {} request:{}", type, url);
-
-
 		return executeRequest(type, new URL(url).toURI());
 	}
 
@@ -85,9 +85,9 @@ public class HttpWorker {
 		try {
 			return saveToStorage(type, uri.toString(), source);
 		} catch (HttpServerErrorException ex) {
-			throw new ErrorSavingToStorageException(ex.getRawStatusCode());
+			throw ErrorSavingToStorageException.errorCodeNot200(ex.getRawStatusCode());
 		} catch (Exception ex) {
-			throw new ErrorSavingToStorageException(ex);
+			throw ErrorSavingToStorageException.caughtException(ex);
 		}
 	}
 
@@ -101,8 +101,12 @@ public class HttpWorker {
 				type
 		);
 		if (exchange.getStatusCode().is2xxSuccessful()) {
-			return exchange.getBody();
+			HttpRecord body = exchange.getBody();
+			if (body == null || !body.isValid()) {
+				throw ErrorSavingToStorageException.invalidReturnObject();
+			}
+			return body;
 		}
-		throw new ErrorSavingToStorageException(exchange.getStatusCodeValue());
+		throw ErrorSavingToStorageException.errorCodeNot200(exchange.getStatusCodeValue());
 	}
 }

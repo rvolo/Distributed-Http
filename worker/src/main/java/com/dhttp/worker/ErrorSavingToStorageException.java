@@ -9,8 +9,8 @@ class ErrorSavingToStorageException extends RuntimeException {
 	 *
 	 * @param ex exception
 	 */
-	ErrorSavingToStorageException(Exception ex) {
-		super(ex);
+	static ErrorSavingToStorageException caughtException(Exception ex) {
+		return new ErrorSavingToStorageException(ex);
 	}
 
 	/**
@@ -18,7 +18,22 @@ class ErrorSavingToStorageException extends RuntimeException {
 	 *
 	 * @param statusCode http status code
 	 */
-	ErrorSavingToStorageException(int statusCode) {
-		super("Received " + statusCode + " from storage server");
+	static ErrorSavingToStorageException errorCodeNot200(int statusCode) {
+		return new ErrorSavingToStorageException("Received " + statusCode + " from storage server");
+	}
+
+	/**
+	 * Object sent by storage server is missing required fields
+	 */
+	static ErrorSavingToStorageException invalidReturnObject() {
+		return new ErrorSavingToStorageException("Storage server returned incorrect object");
+	}
+
+	private ErrorSavingToStorageException(String msg) {
+		super(msg);
+	}
+
+	private ErrorSavingToStorageException(Throwable cause) {
+		super(cause);
 	}
 }
