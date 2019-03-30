@@ -1,5 +1,7 @@
 package com.dhttp.gateway;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.netflix.hystrix.EnableHystrix;
@@ -24,6 +26,8 @@ import java.io.InputStream;
 @EnableHystrix
 @EnableHystrixDashboard
 public class GatewayServer {
+	private static final Logger logger = LoggerFactory.getLogger(GatewayServer.class);
+
 	public static void main(String[] args) {
 		SpringApplication.run(GatewayServer.class, args);
 	}
@@ -38,6 +42,8 @@ public class GatewayServer {
 
 			@Override
 			public ClientHttpResponse fallbackResponse(String route, Throwable cause) {
+				logger.warn("Exception in route:{}", route ,cause);
+
 				return new ClientHttpResponse() {
 					@Override
 					public HttpHeaders getHeaders() {
